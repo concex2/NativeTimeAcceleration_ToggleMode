@@ -5,12 +5,12 @@
 #include <atomic>
 #include <chrono>
 
-// Global state for interception control
+// Estado global para el control de la intercepcion
 static std::atomic<bool> g_isTurboActive(true);
-static int32_t g_turboValue = 10800; // Default: 3 in-game hours per tick
-static const int32_t g_vanillaValue = 1800; // Original Starfield value (Half an in-game hour per tick)
-static int g_modifierKey = 16; // 'Shift' by default
-static int g_mainKey = 84;     // 'T' by default
+static int32_t g_turboValue = 10800; // Por defecto: 3 horas in-game por tic
+static const int32_t g_vanillaValue = 1800; // Valor original de Starfield (Media hora in-game por tic)
+static int g_modifierKey = 16; // 'Shift' por defecto
+static int g_mainKey = 84;     // 'T' por defecto
 
 static void InitializeLogging() {
     char profilePath[MAX_PATH];
@@ -24,7 +24,7 @@ static void InitializeLogging() {
     logger->flush_on(spdlog::level::info);
     spdlog::set_default_logger(logger);
 
-    spdlog::info("NativeTimeAcceleration_ToggleMode v2.0.0 initialized. Asynchronous architecture with key combination ready.");
+    spdlog::info("NativeTimeAcceleration_ToggleMode v2.0.0 inicializado. Arquitectura asincrona con combinacion de teclas preparada.");
 }
 
 static void ReadConfiguration() {
@@ -39,30 +39,30 @@ static void ReadConfiguration() {
         iniPath += ".ini";
     }
 
-    // Process base speed (Now based on in-game Hours per visual jump)
+    // Procesar la velocidad base (Ahora basada en Horas in-game por salto visual)
     int userHours = GetPrivateProfileIntA("Settings", "HoursPerTick", 3, iniPath.c_str());
     
     switch (userHours) {
     case 2:
-        g_turboValue = 7200;  // 2 hours
+        g_turboValue = 7200;  // 2 horas
         break;
     case 3:
-        g_turboValue = 10800; // 3 hours
+        g_turboValue = 10800; // 3 horas
         break;
     case 4:
-        g_turboValue = 14400; // 4 hours
+        g_turboValue = 14400; // 4 horas
         break;
     default:
         g_turboValue = 10800;
-        spdlog::warn("Invalid hours value in INI. Conservative fallback (3 Hours / 10800).");
+        spdlog::warn("Valor de horas invalido en INI. Fallback conservador (3 Horas / 10800).");
         break;
     }
 
-    // Process keyboard hotkeys
+    // Procesar los atajos de teclado
     g_modifierKey = GetPrivateProfileIntA("Hotkeys", "ModifierKey", 16, iniPath.c_str());
     g_mainKey = GetPrivateProfileIntA("Hotkeys", "MainKey", 84, iniPath.c_str());
 
-    spdlog::info("Configuration loaded. Turbo Value: {} ({} Hours). Hotkey: Modifier [{}] + Main [{}]", g_turboValue, userHours, g_modifierKey, g_mainKey);
+    spdlog::info("Configuracion cargada. Valor Turbo: {} ({} Horas). Atajo: Modificador [{}] + Principal [{}]", g_turboValue, userHours, g_modifierKey, g_mainKey);
 }
 
 static void HotkeyMonitorLoop() {
@@ -70,7 +70,7 @@ static void HotkeyMonitorLoop() {
     bool wasSpeedKeyPressed = false;
     
     while (true) {
-        // Execution filter: Only process if the Starfield window is the active window (prevents triggers on Alt-Tab)
+        // Filtrar ejecucion: Solo procesar si la ventana de Starfield es la ventana activa (previene disparos en Alt-Tab)
         HWND foregroundWindow = GetForegroundWindow();
         HWND starfieldWindow = FindWindowA("Starfield", NULL);
         
@@ -79,7 +79,7 @@ static void HotkeyMonitorLoop() {
             bool modifierSatisfied = (g_modifierKey == 0) || (GetAsyncKeyState(g_modifierKey) & 0x8000);
             
             // ---------------------------------------------------------
-            // 1. MAIN TOGGLE LOGIC (TURBO/VANILLA)
+            // 1. LOGICA DE INTERRUPTOR PRINCIPAL (TOGGLE TURBO/VANILLA)
             // ---------------------------------------------------------
             bool mainKeySatisfied = (GetAsyncKeyState(g_mainKey) & 0x8000);
 
@@ -87,7 +87,7 @@ static void HotkeyMonitorLoop() {
                 if (!wasTogglePressed) {
                     wasTogglePressed = true;
                     
-                    // Invert the current mode (will toggle between Vanilla and the last registered g_turboValue)
+                    // Invertir el modo actual (alternará entre Vanilla y el último g_turboValue registrado)
                     g_isTurboActive = !g_isTurboActive;
                     
                     auto gmstCollection = RE::GameSettingCollection::GetSingleton();
@@ -95,8 +95,8 @@ static void HotkeyMonitorLoop() {
                         int32_t newValue = g_isTurboActive ? g_turboValue : g_vanillaValue;
                         gmstCollection->SetSetting("iSecondsToSleepPerUpdate", newValue);
                         
-                        spdlog::info("TOGGLE TRIGGERED: Turbo Mode {}. iSecondsToSleepPerUpdate changed to {}", 
-                            g_isTurboActive ? "ENABLED" : "DISABLED", newValue);
+                        spdlog::info("INTERRUPTOR ACCIONADO: Modo Turbo {}. iSecondsToSleepPerUpdate cambiado a {}", 
+                            g_isTurboActive ? "ACTIVADO" : "DESACTIVADO", newValue);
                     }
                 }
             }
@@ -105,10 +105,10 @@ static void HotkeyMonitorLoop() {
             }
 
             // ---------------------------------------------------------
-            // 2. VISUAL HOURS SPEED CHANGE LOGIC (1, 2, 3, 4)
+            // 2. LOGICA DE CAMBIO DE VELOCIDAD POR HORAS VISUALES (1, 2, 3, 4)
             // ---------------------------------------------------------
             if (modifierSatisfied && !mainKeySatisfied) {
-                // Check state of numbers 1 to 4 (Main keyboard and NumPad)
+                // Comprobar estado de los numeros 1 al 4 (Teclado principal y NumPad)
                 bool key1 = (GetAsyncKeyState(0x31) & 0x8000) || (GetAsyncKeyState(0x61) & 0x8000);
                 bool key2 = (GetAsyncKeyState(0x32) & 0x8000) || (GetAsyncKeyState(0x62) & 0x8000);
                 bool key3 = (GetAsyncKeyState(0x33) & 0x8000) || (GetAsyncKeyState(0x63) & 0x8000);
@@ -121,16 +121,16 @@ static void HotkeyMonitorLoop() {
                         auto gmstCollection = RE::GameSettingCollection::GetSingleton();
                         
                         if (key1) {
-                            // Force off (Vanilla Mode - 1 Hour visual jumps)
+                            // Forzar apagado (Modo Vanilla - Saltos visuales de 1 Hora)
                             g_isTurboActive = false;
-                            spdlog::info("AUTO-OFF: Vanilla Mode FORCED (Key 1).");
+                            spdlog::info("AUTO-APAGADO: Modo Vanilla FORZADO (Tecla 1).");
                             
                             if (gmstCollection) {
                                 gmstCollection->SetSetting("iSecondsToSleepPerUpdate", g_vanillaValue);
                             }
                         } 
                         else {
-                            // Force on and apply the new hour jump
+                            // Forzar encendido y aplicar el nuevo salto de horas
                             int32_t newTurboValue = g_turboValue;
                             if (key2) newTurboValue = 7200; 
                             else if (key3) newTurboValue = 10800;  
@@ -139,7 +139,7 @@ static void HotkeyMonitorLoop() {
                             g_turboValue = newTurboValue;
                             g_isTurboActive = true;
 
-                            spdlog::info("AUTO-ON / UPDATE: Turbo Speed set to {} and Turbo Mode ENABLED", g_turboValue);
+                            spdlog::info("AUTO-ENCENDIDO / ACTUALIZACION: Velocidad Turbo fijada en {} y Modo Turbo ACTIVADO", g_turboValue);
 
                             if (gmstCollection) {
                                 gmstCollection->SetSetting("iSecondsToSleepPerUpdate", g_turboValue);
@@ -156,38 +156,38 @@ static void HotkeyMonitorLoop() {
             }
         }
         else {
-            // If the window is not active, reset states
+            // Si la ventana no esta activa, reiniciamos estados
             wasTogglePressed = false;
             wasSpeedKeyPressed = false;
         }
         
-        // 50 milliseconds pause to prevent CPU cycle saturation
+        // Pausa de 50 milisegundos para prevenir saturacion en los ciclos del CPU
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
 
 static void MessageCallback(SFSE::MessagingInterface::Message* a_msg) {
     if (a_msg->type == SFSE::MessagingInterface::kPostDataLoad) {
-        spdlog::info("kPostDataLoad signal received. Setting initial configuration.");
+        spdlog::info("Senal kPostDataLoad recibida. Estableciendo configuracion inicial.");
 
         auto gmstCollection = RE::GameSettingCollection::GetSingleton();
         if (gmstCollection) {
-            // Inject the default Turbo value on startup
+            // Se inyecta el valor Turbo por defecto al iniciar
             bool result = gmstCollection->SetSetting("iSecondsToSleepPerUpdate", g_turboValue);
             
             if (result) {
-                spdlog::info("SUCCESS: Base parameter set to {} (Turbo Mode Active).", g_turboValue);
+                spdlog::info("EXITO: Parametro base establecido a {} (Modo Turbo Activo).", g_turboValue);
                 
-                // Deploy the secondary thread to avoid blocking the main engine thread
+                // Desplegar el hilo secundario para evitar bloquear el hilo principal del motor
                 std::thread(HotkeyMonitorLoop).detach();
-                spdlog::info("Secondary keyboard interception thread deployed successfully.");
+                spdlog::info("Hilo secundario de intercepcion de teclado desplegado correctamente.");
             }
             else {
-                spdlog::error("CRITICAL FAILURE: SetSetting function returned false during initial injection.");
+                spdlog::error("FALLO CRITICO: La funcion SetSetting retorno falso en la inyeccion inicial.");
             }
         }
         else {
-            spdlog::error("CRITICAL FAILURE: GameSettingCollection singleton is a null pointer.");
+            spdlog::error("FALLO CRITICO: El singleton GameSettingCollection es un puntero nulo.");
         }
     }
 }
@@ -206,10 +206,10 @@ SFSE_PLUGIN_LOAD(const SFSE::LoadInterface* a_sfse)
 
     auto messaging = SFSE::GetMessagingInterface();
     if (!messaging->RegisterListener(MessageCallback)) {
-        spdlog::error("Infrastructure failure: Could not register the Listener.");
+        spdlog::error("Fallo de infraestructura: No se pudo registrar el Listener.");
         return false;
     }
 
-    spdlog::info("SFSE event listener registered successfully.");
+    spdlog::info("Listener de eventos SFSE registrado con exito.");
     return true;
 }
