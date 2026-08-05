@@ -6,15 +6,15 @@ add_rules("plugin.vsxmake.autoupdate")
 includes("lib/commonlibsf")
 
 -- Constantes del proyecto
-set_project("NativeTimeAcceleration_ToggleMode")
-set_version("2.0.0")
+set_project("NativeTimeAcceleration")
+set_version("2.0.1")
 set_languages("c++23")
 
 -- Definición del Target
-target("NativeTimeAcceleration_ToggleMode")
+target("NativeTimeAcceleration")
     -- La macro mágica de XMake que expone la versión y maneja las dependencias
     add_rules("commonlibsf.plugin", {
-        name = "NativeTimeAcceleration_ToggleMode",
+        name = "NativeTimeAcceleration",
         author = "concex1",
         description = "Acelera los tiempos de espera in-game alternando dinamicamente entre modo Turbo y Vanilla"
     })
